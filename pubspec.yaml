@@ -1,0 +1,25 @@
+name: infobits
+description: "Infobits analytics and error tracking. Analytics, Logging, Error Tracking, Crash Reporting, Performance Monitoring, and more."
+version: 0.1.0
+homepage: https://www.infobits.io
+repository: https://github.com/infobits-io/infobits-flutter
+
+environment:
+  sdk: ^3.8.1
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.4.0
+  grpc: ^4.1.0
+  stack_trace: ^1.12.1
+  package_info_plus: ^8.3.0
+  device_info_plus: ^11.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:

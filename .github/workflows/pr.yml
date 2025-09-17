@@ -1,0 +1,239 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+env:
+  FLUTTER_VERSION: "3.24.0"
+
+jobs:
+  validate-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^[A-Z].+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            starts with an uppercase letter.
+
+  check-size:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          FILES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}..HEAD | wc -l)
+          LINES_ADDED=$(git diff --numstat origin/${{ github.base_ref }}..HEAD | awk '{sum+=$1} END {print sum}')
+          LINES_DELETED=$(git diff --numstat origin/${{ github.base_ref }}..HEAD | awk '{sum+=$2} END {print sum}')
+          
+          echo "Files changed: $FILES_CHANGED"
+          echo "Lines added: $LINES_ADDED"
+          echo "Lines deleted: $LINES_DELETED"
+          
+          if [ "$FILES_CHANGED" -gt "50" ]; then
+            echo "⚠️ Warning: This PR changes $FILES_CHANGED files. Consider breaking it into smaller PRs."
+          fi
+          
+          if [ "$LINES_ADDED" -gt "1000" ]; then
+            echo "⚠️ Warning: This PR adds $LINES_ADDED lines. Consider breaking it into smaller PRs."
+          fi
+
+  label:
+    name: Auto Label
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Label PR based on files
+        uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          sync-labels: true
+
+  test-coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Generate coverage report
+        run: |
+          flutter pub global activate coverage
+          flutter pub global run coverage:format_coverage \
+            --lcov \
+            --in=coverage \
+            --out=coverage/lcov.info \
+            --report-on=lib
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep "lines" | sed 's/.*: \([0-9.]*\)%.*/\1/')
+          echo "Code coverage: $COVERAGE%"
+          
+          # Set minimum coverage threshold
+          MIN_COVERAGE=80
+          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
+            echo "❌ Code coverage ($COVERAGE%) is below the minimum threshold ($MIN_COVERAGE%)"
+            exit 1
+          else
+            echo "✅ Code coverage ($COVERAGE%) meets the minimum threshold ($MIN_COVERAGE%)"
+          fi
+
+      - name: Coverage report comment
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          lcov-file: ./coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          delete-old-comments: true
+
+  example-validation:
+    name: Validate Examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Validate main example
+        working-directory: example
+        run: |
+          flutter pub get
+          flutter analyze --no-fatal-infos
+          flutter test
+
+      - name: Check example documentation
+        run: |
+          if [ ! -f "example/README.md" ]; then
+            echo "❌ example/README.md is missing"
+            exit 1
+          fi
+          
+          # Check if example contains necessary files
+          for file in "lib/main.dart" "pubspec.yaml"; do
+            if [ ! -f "example/$file" ]; then
+              echo "❌ example/$file is missing"
+              exit 1
+            fi
+          done
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  documentation:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate documentation
+        run: |
+          dart doc . --output=doc/api
+          
+          # Check if documentation was generated successfully
+          if [ ! -d "doc/api" ]; then
+            echo "❌ Failed to generate documentation"
+            exit 1
+          fi
+
+      - name: Check for broken links in README
+        run: |
+          # Simple check for common broken link patterns
+          if grep -E '\[.*\]\(\)' README.md; then
+            echo "⚠️ Found empty links in README.md"
+          fi
+          
+          if grep -E '\[.*\]\(#.*\)' README.md; then
+            echo "ℹ️ Found anchor links in README.md - please verify they exist"
+          fi

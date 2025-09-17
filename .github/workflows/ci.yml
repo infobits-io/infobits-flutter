@@ -1,0 +1,241 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.24.0"
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos
+
+      - name: Check for dependency issues
+        run: flutter pub outdated --no-dev-dependencies --up-to-date --no-dependency-overrides
+
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        flutter-channel: [stable, beta]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ matrix.flutter-channel }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test --coverage
+
+  build-example:
+    name: Build Example App
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        target: [apk, ios, web, macos, windows, linux]
+        exclude:
+          # Exclude unsupported combinations
+          - os: ubuntu-latest
+            target: ios
+          - os: ubuntu-latest
+            target: macos
+          - os: ubuntu-latest
+            target: windows
+          - os: windows-latest
+            target: ios
+          - os: windows-latest
+            target: macos
+          - os: windows-latest
+            target: linux
+          - os: windows-latest
+            target: apk
+          - os: macos-latest
+            target: windows
+          - os: macos-latest
+            target: linux
+          - os: macos-latest
+            target: apk
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Setup Java (for Android)
+        if: matrix.target == 'apk'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Linux dependencies
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev
+
+      - name: Install dependencies
+        working-directory: example
+        run: flutter pub get
+
+      - name: Build APK
+        if: matrix.target == 'apk'
+        working-directory: example
+        run: flutter build apk --release
+
+      - name: Build iOS (no signing)
+        if: matrix.target == 'ios'
+        working-directory: example
+        run: flutter build ios --release --no-codesign
+
+      - name: Build Web
+        if: matrix.target == 'web'
+        working-directory: example
+        run: flutter build web --release
+
+      - name: Build macOS
+        if: matrix.target == 'macos'
+        working-directory: example
+        run: flutter build macos --release
+
+      - name: Build Windows
+        if: matrix.target == 'windows'
+        working-directory: example
+        run: flutter build windows --release
+
+      - name: Build Linux
+        if: matrix.target == 'linux'
+        working-directory: example
+        run: flutter build linux --release
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-${{ matrix.os }}-build
+          path: |
+            example/build/app/outputs/flutter-apk/*.apk
+            example/build/ios/iphoneos/*.app
+            example/build/web/
+            example/build/macos/Build/Products/Release/*.app
+            example/build/windows/x64/runner/Release/
+            example/build/linux/x64/release/bundle/
+          retention-days: 5
+
+  pub-dry-run:
+    name: Pub.dev Dry Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Dry run pub publish
+        run: flutter pub publish --dry-run
+
+  check-changelog:
+    name: Check CHANGELOG
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if CHANGELOG.md was updated
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}..HEAD | grep -q "CHANGELOG.md"; then
+            echo "✅ CHANGELOG.md was updated"
+          else
+            echo "⚠️ Warning: CHANGELOG.md was not updated in this PR"
+            echo "Please update CHANGELOG.md if this PR includes user-facing changes"
+          fi
+
+  package-score:
+    name: Package Score
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install pana
+        run: flutter pub global activate pana
+
+      - name: Run pana
+        run: |
+          flutter pub global run pana . --no-warning --line-length 80 > pana_report.txt || true
+          cat pana_report.txt
+          score=$(grep "Points:" pana_report.txt | sed 's/.*Points: \([0-9]*\).*/\1/')
+          echo "Package score: $score/160"
+          if [ "$score" -lt "130" ]; then
+            echo "⚠️ Package score is below 130. Consider improving the package to increase the score."
+          fi
+
+      - name: Upload pana report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pana-report
+          path: pana_report.txt
+          retention-days: 7

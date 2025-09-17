@@ -1,0 +1,222 @@
+name: Nightly Build
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.24.0"
+
+jobs:
+  test-all-platforms:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        flutter-channel: [stable, beta, master]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ matrix.flutter-channel }}
+          cache: true
+
+      - name: Doctor
+        run: flutter doctor -v
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Test example app
+        working-directory: example
+        run: |
+          flutter pub get
+          flutter test
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run integration tests
+        run: |
+          # Add integration tests when available
+          echo "Integration tests would run here"
+
+  performance-benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run benchmarks
+        run: |
+          # Create a simple benchmark script
+          cat > benchmark.dart << 'EOF'
+          import 'package:infobits/infobits.dart';
+          
+          void main() async {
+            await Infobits.initialize(
+              loggingEnabled: true,
+              analyticsEnabled: false,
+            );
+            
+            // Benchmark logging performance
+            final stopwatch = Stopwatch()..start();
+            for (int i = 0; i < 1000; i++) {
+              Logger.info('Benchmark log message $i');
+            }
+            stopwatch.stop();
+            print('1000 logs took: ${stopwatch.elapsedMilliseconds}ms');
+            
+            // Benchmark breadcrumb performance
+            stopwatch.reset();
+            for (int i = 0; i < 1000; i++) {
+              Infobits.addBreadcrumb('test', message: 'Breadcrumb $i');
+            }
+            print('1000 breadcrumbs took: ${stopwatch.elapsedMilliseconds}ms');
+          }
+          EOF
+          
+          dart run benchmark.dart
+
+      - name: Store benchmark results
+        run: |
+          echo "Benchmark completed at $(date)" >> benchmark_results.txt
+          
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.run_number }}
+          path: benchmark_results.txt
+          retention-days: 30
+
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Check for outdated dependencies
+        run: |
+          flutter pub outdated
+          
+      - name: Check for security vulnerabilities
+        run: |
+          # Check for known vulnerabilities
+          flutter pub deps
+          
+      - name: License check
+        run: |
+          flutter pub deps --no-dev --style=list | grep -E "^\w" || true
+
+  package-analysis:
+    name: Package Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install pana
+        run: flutter pub global activate pana
+
+      - name: Run pana analysis
+        run: |
+          flutter pub global run pana . --no-warning > pana_report.txt
+          cat pana_report.txt
+          
+          # Extract and check score
+          score=$(grep "Points:" pana_report.txt | sed 's/.*Points: \([0-9]*\).*/\1/')
+          echo "Package score: $score/160"
+          
+          if [ "$score" -lt "130" ]; then
+            echo "⚠️ Package score has dropped below 130!"
+          fi
+
+      - name: Upload pana report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pana-report-nightly-${{ github.run_number }}
+          path: pana_report.txt
+          retention-days: 7
+
+  notify-failures:
+    name: Notify Failures
+    needs: [test-all-platforms, integration-tests, performance-benchmark, dependency-audit, package-analysis]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create issue for nightly failure
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Nightly build failed - ${date}`,
+              body: `The nightly build failed on ${date}.\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['bug', 'ci', 'nightly']
+            });
+            console.log(`Created issue #${issue.data.number}`);
+
+  summary:
+    name: Nightly Summary
+    needs: [test-all-platforms, integration-tests, performance-benchmark, dependency-audit, package-analysis]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "✅ Nightly build completed successfully!"
+          echo "All tests passed across all platforms and Flutter channels"

@@ -1,0 +1,100 @@
+# Add labels to PRs based on files changed
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.md'
+      - 'LICENSE'
+      - 'doc/**'
+      - 'example/README.md'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'example/pubspec.yaml'
+      - 'example/pubspec.lock'
+
+example:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'example/**'
+
+test:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'test/**'
+      - 'example/test/**'
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**'
+      - '.github/dependabot.yml'
+      - '.github/labeler.yml'
+
+analytics:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'lib/src/analytics.dart'
+      - 'lib/src/analytics_region.dart'
+      - 'lib/src/observer.dart'
+      - 'lib/src/lifecycle_observer.dart'
+
+logging:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'lib/src/logging.dart'
+      - 'lib/src/logger.dart'
+      - 'lib/src/log_event.dart'
+      - 'lib/src/log_output.dart'
+      - 'lib/src/filters/**'
+      - 'lib/src/outputs/**'
+      - 'lib/src/printers/**'
+
+benchmark:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'lib/src/benchmark.dart'
+
+breadcrumb:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'lib/src/breadcrumb.dart'
+
+breaking-change:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'lib/infobits.dart'
+      - 'lib/src/infobits.dart'
+
+platform-android:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'example/android/**'
+
+platform-ios:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'example/ios/**'
+
+platform-web:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'example/web/**'
+
+platform-macos:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'example/macos/**'
+
+platform-windows:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'example/windows/**'
+
+platform-linux:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'example/linux/**'

@@ -1,0 +1,88 @@
+name: release
+
+on:
+  push:
+    branches:
+      - master
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  release:
+    name: release
+    # Only run on the main repository
+    if: github.repository_owner == 'infobits-io'
+    permissions:
+      # Release needs to push a tag back to the repo.
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history so we can get all the tags to determine version.
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Wait on all tests
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          running-workflow-name: "release"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 30
+          allowed-conclusions: success,neutral
+
+      - name: Check version and publish
+        run: |
+          # Get current version from pubspec.yaml
+          CURRENT_VERSION=$(grep "^version:" pubspec.yaml | cut -d " " -f 2)
+          echo "Current version: $CURRENT_VERSION"
+
+          # Check if tag already exists
+          if git rev-parse "v$CURRENT_VERSION" >/dev/null 2>&1; then
+            echo "Tag v$CURRENT_VERSION already exists, skipping release"
+            exit 0
+          fi
+
+          echo "Version changed to $CURRENT_VERSION, proceeding with release"
+
+          # Run tests
+          flutter test
+
+          # Dry run to ensure package is valid
+          flutter pub publish --dry-run
+
+          # Setup credentials if available
+          if [ -n "$PUB_CREDENTIALS" ]; then
+            mkdir -p $HOME/.pub-cache
+            echo "$PUB_CREDENTIALS" > $HOME/.pub-cache/credentials.json
+            
+            # Publish to pub.dev
+            flutter pub publish --force
+            
+            # Create and push tag
+            git config --global user.name ${{ secrets.PUB_USER_NAME }}
+            git config --global user.email ${{ secrets.PUB_USER_EMAIL }}
+            git tag -a "v$CURRENT_VERSION" -m "Release version $CURRENT_VERSION"
+            git push origin "v$CURRENT_VERSION"
+            
+            echo "✅ Successfully published version $CURRENT_VERSION to pub.dev"
+          else
+            echo "⚠️ PUB_CREDENTIALS not configured, skipping publish"
+            echo "To enable automated publishing:"
+            echo "1. Manually publish: flutter pub publish"
+            echo "2. Copy credentials: cat ~/.pub-cache/credentials.json"
+            echo "3. Add as GitHub secret: PUB_CREDENTIALS"
+          fi
+        env:
+          PUB_CREDENTIALS: ${{ secrets.PUB_CREDENTIALS }}
