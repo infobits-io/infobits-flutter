@@ -1,4 +1,5 @@
-import 'dart:ui' as ui
+import 'dart:ui'
+    as ui
     show
         Paragraph,
         ParagraphBuilder,

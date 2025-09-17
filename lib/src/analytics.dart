@@ -37,7 +37,7 @@ class InfobitsAnalytics {
     if (config.domain == null) {
       throw Exception('Domain is required for analytics');
     }
-    
+
     _instance = InfobitsAnalytics._create(
       apiKey: config.apiKey!,
       ingestUrl: config.analyticsIngestUrl,
@@ -58,13 +58,13 @@ class InfobitsAnalytics {
   final String ingestUrl;
   final String domain;
   final bool debug;
-  
+
   // Global properties that will be included with all events
   final Map<String, dynamic> _globalProperties = {};
-  
+
   // Queue for offline events
   final List<Map<String, dynamic>> _eventQueue = [];
-  
+
   // Track active views
   List<ViewEntry> views = [];
 
@@ -73,8 +73,9 @@ class InfobitsAnalytics {
     final domain = kIsWeb ? Uri.base.host : this.domain;
     final url = "$protocol://$domain$path";
 
-    final referrer =
-        referrerPath == "" ? "" : "$protocol://$domain$referrerPath";
+    final referrer = referrerPath == ""
+        ? ""
+        : "$protocol://$domain$referrerPath";
 
     const String env = kReleaseMode ? "prod" : "dev";
 
@@ -148,7 +149,7 @@ class InfobitsAnalytics {
       'sr': '${width}x$height',
       'av': appVersion,
       'tv': "flutter-0.0.1-alpha",
-      'ca': DateTime.now().toUtc().toIso8601String()
+      'ca': DateTime.now().toUtc().toIso8601String(),
     });
 
     final endpoint = Uri.parse("${ingestUrl}view");
@@ -159,8 +160,11 @@ class InfobitsAnalytics {
     final client = http.Client();
 
     try {
-      final response =
-          await client.post(endpoint, headers: headers, body: body);
+      final response = await client.post(
+        endpoint,
+        headers: headers,
+        body: body,
+      );
       if (response.statusCode == 200) {
         final res = jsonDecode(response.body);
         final id = res['id'];
@@ -206,7 +210,7 @@ class InfobitsAnalytics {
   void startView(String path, {String referrerPath = ''}) {
     track(path, referrerPath: referrerPath);
   }
-  
+
   /// Track a custom event with optional properties
   Future<void> trackEvent(
     String eventName, {
@@ -215,15 +219,12 @@ class InfobitsAnalytics {
     final eventData = {
       'event': eventName,
       'timestamp': DateTime.now().toUtc().toIso8601String(),
-      'properties': {
-        ..._globalProperties,
-        ...?properties,
-      },
+      'properties': {..._globalProperties, ...?properties},
     };
-    
+
     await _sendEvent('custom', eventData);
   }
-  
+
   /// Track revenue with amount and optional properties
   Future<void> trackRevenue(
     double amount, {
@@ -234,15 +235,12 @@ class InfobitsAnalytics {
       'amount': amount,
       'currency': currency,
       'timestamp': DateTime.now().toUtc().toIso8601String(),
-      'properties': {
-        ..._globalProperties,
-        ...?properties,
-      },
+      'properties': {..._globalProperties, ...?properties},
     };
-    
+
     await _sendEvent('revenue', revenueData);
   }
-  
+
   /// Track a conversion event
   Future<void> trackConversion(
     String conversionType, {
@@ -251,36 +249,33 @@ class InfobitsAnalytics {
     final conversionData = {
       'type': conversionType,
       'timestamp': DateTime.now().toUtc().toIso8601String(),
-      'properties': {
-        ..._globalProperties,
-        ...?properties,
-      },
+      'properties': {..._globalProperties, ...?properties},
     };
-    
+
     await _sendEvent('conversion', conversionData);
   }
-  
+
   /// Set global properties that will be included with all events
   void setGlobalProperties(Map<String, dynamic> properties) {
     _globalProperties.clear();
     _globalProperties.addAll(properties);
   }
-  
+
   /// Update global properties (merge with existing)
   void updateGlobalProperties(Map<String, dynamic> properties) {
     _globalProperties.addAll(properties);
   }
-  
+
   /// Remove a global property
   void removeGlobalProperty(String key) {
     _globalProperties.remove(key);
   }
-  
+
   /// Clear all global properties
   void clearGlobalProperties() {
     _globalProperties.clear();
   }
-  
+
   /// Internal method to send events
   Future<void> _sendEvent(String eventType, Map<String, dynamic> data) async {
     try {
@@ -288,11 +283,11 @@ class InfobitsAnalytics {
       String userAgent = "";
       String appVersion = "";
       String platform = "";
-      
+
       try {
         final packageInfo = await PackageInfo.fromPlatform();
         appVersion = packageInfo.version;
-        
+
         final deviceInfoPlugin = DeviceInfoPlugin();
         if (!kIsWeb) {
           if (Platform.isAndroid) {
@@ -319,7 +314,7 @@ class InfobitsAnalytics {
       } catch (e) {
         if (debug) print('Error getting device info: $e');
       }
-      
+
       // Add common fields
       final eventPayload = {
         'k': apiKey,
@@ -334,27 +329,25 @@ class InfobitsAnalytics {
         'screen_size': _getScreenSize(),
         ...data,
       };
-      
+
       // Send the event
       final endpoint = Uri.parse('${ingestUrl}event');
       final headers = {
         'Content-Type': 'application/json',
         if (userAgent.isNotEmpty) 'User-Agent': userAgent,
       };
-      
-      final response = await http.post(
-        endpoint,
-        headers: headers,
-        body: jsonEncode(eventPayload),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          // Queue event for retry if timeout
-          _queueEvent(eventPayload);
-          throw Exception('Event send timeout');
-        },
-      );
-      
+
+      final response = await http
+          .post(endpoint, headers: headers, body: jsonEncode(eventPayload))
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              // Queue event for retry if timeout
+              _queueEvent(eventPayload);
+              throw Exception('Event send timeout');
+            },
+          );
+
       if (response.statusCode == 200) {
         if (debug) {
           print('Event sent successfully: $eventType');
@@ -375,7 +368,7 @@ class InfobitsAnalytics {
       _queueEvent(data);
     }
   }
-  
+
   /// Queue an event for later sending (offline support)
   void _queueEvent(Map<String, dynamic> eventData) {
     _eventQueue.add(eventData);
@@ -384,14 +377,14 @@ class InfobitsAnalytics {
       _eventQueue.removeAt(0);
     }
   }
-  
+
   /// Process queued events (call this when coming back online)
   Future<void> processQueuedEvents() async {
     if (_eventQueue.isEmpty) return;
-    
+
     final eventsToProcess = List<Map<String, dynamic>>.from(_eventQueue);
     _eventQueue.clear();
-    
+
     for (final event in eventsToProcess) {
       try {
         final endpoint = Uri.parse('${ingestUrl}event');
@@ -400,7 +393,7 @@ class InfobitsAnalytics {
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(event),
         );
-        
+
         if (response.statusCode != 200) {
           // Re-queue if still failing
           _queueEvent(event);
@@ -411,7 +404,7 @@ class InfobitsAnalytics {
       }
     }
   }
-  
+
   /// Get screen size as a string
   String _getScreenSize() {
     final size = PlatformDispatcher.instance.implicitView?.display.size;
@@ -431,10 +424,7 @@ class InfobitsAnalytics {
         views.remove(view);
       }
 
-      final body = jsonEncode({
-        'k': apiKey,
-        'id': id,
-      });
+      final body = jsonEncode({'k': apiKey, 'id': id});
 
       final endpoint = Uri.parse("${ingestUrl}end-view");
       final headers = {'Content-Type': 'application/json'};

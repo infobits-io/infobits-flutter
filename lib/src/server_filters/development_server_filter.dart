@@ -6,9 +6,7 @@ import 'server_filter.dart';
 ///
 /// In release mode ALL logs are omitted.
 class LoggingDevelopmentServerFilter extends LoggingServerFilter {
-  const LoggingDevelopmentServerFilter({
-    super.level = LoggingLogLevel.info,
-  });
+  const LoggingDevelopmentServerFilter({super.level = LoggingLogLevel.info});
 
   @override
   bool shouldSend(LoggingLogEvent logEvent) {

@@ -16,15 +16,14 @@ export 'src/logging.dart' show InfobitsLogging;
 export 'src/options.dart' show LoggingOptions;
 
 // Benchmark exports
-export 'src/benchmark.dart' show 
-  Benchmark, 
-  BenchmarkTimer, 
-  BenchmarkResult, 
-  BenchmarkStatistics, 
-  InfobitsBenchmark;
+export 'src/benchmark.dart'
+    show
+        Benchmark,
+        BenchmarkTimer,
+        BenchmarkResult,
+        BenchmarkStatistics,
+        InfobitsBenchmark;
 
 // Breadcrumb exports
-export 'src/breadcrumb.dart' show
-  Breadcrumb,
-  BreadcrumbLevel,
-  BreadcrumbManager;
+export 'src/breadcrumb.dart'
+    show Breadcrumb, BreadcrumbLevel, BreadcrumbManager;

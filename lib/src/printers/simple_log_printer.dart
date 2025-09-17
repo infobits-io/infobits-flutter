@@ -37,7 +37,7 @@ class LoggingSimpleLogPrinter extends LoggingLogPrinter {
         : '';
     var timeStr = printTime ? 'TIME: ${DateTime.now().toIso8601String()}' : '';
     return [
-      '${_labelFor(logEvent.level)} $timeStr ${logEvent.message}$errorStr'
+      '${_labelFor(logEvent.level)} $timeStr ${logEvent.message}$errorStr',
     ];
   }
 

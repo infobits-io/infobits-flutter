@@ -101,7 +101,9 @@ class LoggingPrettyLogPrinter extends LoggingLogPrinter {
     if (logEvent.stackTrace == null || logEvent.stackTrace!.isEmpty) {
       if (methodCount > 0) {
         stackTraceStr = formatStackTrace(
-            getStackTraceElements(StackTrace.current), methodCount);
+          getStackTraceElements(StackTrace.current),
+          methodCount,
+        );
       }
     } else if (errorMethodCount > 0) {
       stackTraceStr = formatStackTrace(logEvent.stackTrace!, errorMethodCount);
@@ -216,7 +218,8 @@ class LoggingPrettyLogPrinter extends LoggingLogPrinter {
           "${line.className == "" ? "" : "${line.className}."}${line.method}";
 
       formatted.add(
-          '#${count.toString().padRight(2)}  ${classMethod.padRight(classMethodLength)}   (${line.file}:${line.line}:${line.column}) ');
+        '#${count.toString().padRight(2)}  ${classMethod.padRight(classMethodLength)}   (${line.file}:${line.line}:${line.column}) ',
+      );
       if (++count == methodCount) {
         break;
       }

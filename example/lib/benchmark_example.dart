@@ -82,30 +82,37 @@ class _BenchmarkExamplePageState extends State<BenchmarkExamplePage> {
     });
 
     final mainTimer = Benchmark.start('main_operation');
-    
+
     // Sub-benchmark 1
-    final subTimer1 = Benchmark.start('data_preparation', 
-      metadata: {'parent': mainTimer.id});
+    final subTimer1 = Benchmark.start(
+      'data_preparation',
+      metadata: {'parent': mainTimer.id},
+    );
     await Future.delayed(const Duration(milliseconds: 100));
     final subResult1 = Benchmark.stop(subTimer1);
-    
+
     // Sub-benchmark 2
-    final subTimer2 = Benchmark.start('processing', 
-      metadata: {'parent': mainTimer.id});
+    final subTimer2 = Benchmark.start(
+      'processing',
+      metadata: {'parent': mainTimer.id},
+    );
     await Future.delayed(const Duration(milliseconds: 200));
     final subResult2 = Benchmark.stop(subTimer2);
-    
+
     // Sub-benchmark 3
-    final subTimer3 = Benchmark.start('cleanup', 
-      metadata: {'parent': mainTimer.id});
+    final subTimer3 = Benchmark.start(
+      'cleanup',
+      metadata: {'parent': mainTimer.id},
+    );
     await Future.delayed(const Duration(milliseconds: 50));
     final subResult3 = Benchmark.stop(subTimer3);
-    
+
     final mainResult = Benchmark.stop(mainTimer);
 
     setState(() {
       _isRunning = false;
-      _output = '''Nested Benchmarks:
+      _output =
+          '''Nested Benchmarks:
 Main: $mainResult
   - $subResult1
   - $subResult2
@@ -134,7 +141,8 @@ Main: $mainResult
 
     setState(() {
       _isRunning = false;
-      _output = '''Statistical Benchmark:
+      _output =
+          '''Statistical Benchmark:
 $stats
 
 Min: ${stats.min.inMilliseconds}ms
@@ -204,7 +212,7 @@ Median: ${stats.median.inMilliseconds}ms''';
   /// Example: Show all statistics
   void _showStatistics() {
     final stats = <String>[];
-    
+
     // Get statistics for specific benchmarks
     final mathStats = Benchmark.getStatistics('math_operations');
     if (mathStats != null) {
@@ -290,12 +298,14 @@ Median: ${stats.median.inMilliseconds}ms''';
                   child: const Text('Show Statistics'),
                 ),
                 ElevatedButton(
-                  onPressed: _isRunning ? null : () {
-                    Benchmark.clear();
-                    setState(() {
-                      _output = 'Benchmarks cleared';
-                    });
-                  },
+                  onPressed: _isRunning
+                      ? null
+                      : () {
+                          Benchmark.clear();
+                          setState(() {
+                            _output = 'Benchmarks cleared';
+                          });
+                        },
                   child: const Text('Clear'),
                 ),
               ],

@@ -33,41 +33,31 @@ class Breadcrumb {
 }
 
 /// Breadcrumb severity levels
-enum BreadcrumbLevel {
-  debug,
-  info,
-  navigation,
-  error,
-  warning,
-  user,
-  state,
-}
+enum BreadcrumbLevel { debug, info, navigation, error, warning, user, state }
 
 /// Manages breadcrumbs for debugging and error tracking
 class BreadcrumbManager {
   static BreadcrumbManager? _instance;
-  
+
   /// Maximum number of breadcrumbs to keep
   final int maxBreadcrumbs;
-  
+
   /// List of breadcrumbs
   final List<Breadcrumb> _breadcrumbs = [];
-  
-  BreadcrumbManager._({
-    this.maxBreadcrumbs = 100,
-  });
-  
+
+  BreadcrumbManager._({this.maxBreadcrumbs = 100});
+
   /// Get the singleton instance
   static BreadcrumbManager get instance {
     _instance ??= BreadcrumbManager._();
     return _instance!;
   }
-  
+
   /// Initialize with custom settings
   static void initialize({int maxBreadcrumbs = 100}) {
     _instance = BreadcrumbManager._(maxBreadcrumbs: maxBreadcrumbs);
   }
-  
+
   /// Add a breadcrumb
   void add(
     String category, {
@@ -81,19 +71,19 @@ class BreadcrumbManager {
       data: data,
       level: level,
     );
-    
+
     _breadcrumbs.add(breadcrumb);
-    
+
     // Trim to max size
     while (_breadcrumbs.length > maxBreadcrumbs) {
       _breadcrumbs.removeAt(0);
     }
-    
+
     if (kDebugMode) {
       print('[Breadcrumb] $breadcrumb');
     }
   }
-  
+
   /// Add a navigation breadcrumb
   void addNavigation(String from, String to, {Map<String, dynamic>? data}) {
     add(
@@ -103,17 +93,12 @@ class BreadcrumbManager {
       level: BreadcrumbLevel.navigation,
     );
   }
-  
+
   /// Add a user action breadcrumb
   void addUserAction(String action, {Map<String, dynamic>? data}) {
-    add(
-      'user',
-      message: action,
-      data: data,
-      level: BreadcrumbLevel.user,
-    );
+    add('user', message: action, data: data, level: BreadcrumbLevel.user);
   }
-  
+
   /// Add an HTTP breadcrumb
   void addHttp({
     required String method,
@@ -135,40 +120,30 @@ class BreadcrumbManager {
           : BreadcrumbLevel.info,
     );
   }
-  
+
   /// Add a state change breadcrumb
   void addStateChange(String state, {Map<String, dynamic>? data}) {
-    add(
-      'state',
-      message: state,
-      data: data,
-      level: BreadcrumbLevel.state,
-    );
+    add('state', message: state, data: data, level: BreadcrumbLevel.state);
   }
-  
+
   /// Add an error breadcrumb
   void addError(String error, {Map<String, dynamic>? data}) {
-    add(
-      'error',
-      message: error,
-      data: data,
-      level: BreadcrumbLevel.error,
-    );
+    add('error', message: error, data: data, level: BreadcrumbLevel.error);
   }
-  
+
   /// Get all breadcrumbs
   List<Breadcrumb> get breadcrumbs => List.unmodifiable(_breadcrumbs);
-  
+
   /// Get breadcrumbs as JSON
   List<Map<String, dynamic>> toJson() {
     return _breadcrumbs.map((b) => b.toJson()).toList();
   }
-  
+
   /// Clear all breadcrumbs
   void clear() {
     _breadcrumbs.clear();
   }
-  
+
   /// Get breadcrumbs for the last N seconds
   List<Breadcrumb> getBreadcrumbsSince(Duration duration) {
     final cutoff = DateTime.now().subtract(duration);

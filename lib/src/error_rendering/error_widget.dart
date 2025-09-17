@@ -8,17 +8,17 @@ class LoggingErrorWidget extends LeafRenderObjectWidget {
   final FlutterError? _flutterError;
 
   LoggingErrorWidget(Object exception)
-      : message = _stringify(exception),
-        _flutterError = exception is FlutterError ? exception : null,
-        super(key: UniqueKey());
+    : message = _stringify(exception),
+      _flutterError = exception is FlutterError ? exception : null,
+      super(key: UniqueKey());
 
   /// Creates a widget that displays the given error message.
   ///
   /// An explicit [FlutterError] can be provided to be reported to inspection
   /// tools. It need not match the message.
   LoggingErrorWidget.withDetails({this.message = '', FlutterError? error})
-      : _flutterError = error,
-        super(key: UniqueKey());
+    : _flutterError = error,
+      super(key: UniqueKey());
 
   static String _stringify(Object? exception) {
     try {
