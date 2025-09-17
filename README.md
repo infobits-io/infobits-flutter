@@ -23,9 +23,8 @@ A privacy-focused, comprehensive analytics, logging, error tracking, and perform
 
 Add `infobits` to your `pubspec.yaml`:
 
-```yaml
-dependencies:
-  infobits: ^0.1.0
+```bash
+flutter pub add infobits
 ```
 
 ### Basic Setup

@@ -1,5 +1,5 @@
 name: infobits
-description: "Infobits analytics and error tracking. Analytics, Logging, Error Tracking, Crash Reporting, Performance Monitoring, and more."
+description: "Infobits analytics and error tracking. Analytics, Logging, Logger, Error Tracking, Crash Reporting, Performance Monitoring, and more."
 version: 0.1.0
 homepage: https://www.infobits.io
 repository: https://github.com/infobits-io/infobits-flutter
