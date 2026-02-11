@@ -15,7 +15,7 @@ class LoggingMemoryOutput extends LoggingLogOutput {
   final ListQueue<LoggingOutputLog> buffer;
 
   LoggingMemoryOutput({this.bufferSize = 20, this.secondOutput})
-      : buffer = ListQueue(bufferSize);
+    : buffer = ListQueue(bufferSize);
 
   @override
   void output(LoggingOutputLog output) {

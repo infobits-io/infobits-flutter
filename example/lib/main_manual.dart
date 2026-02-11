@@ -5,7 +5,7 @@ import 'package:infobits/infobits.dart';
 void main() async {
   // Manual initialization gives you more control over the initialization process
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     // Initialize Infobits manually
     await Infobits.initialize(
@@ -15,13 +15,13 @@ void main() async {
       analyticsEnabled: true,
       loggingEnabled: true,
     );
-    
+
     Logger.info('Infobits initialized successfully');
   } catch (e) {
     // Handle initialization errors
     debugPrint('Failed to initialize Infobits: $e');
   }
-  
+
   // Run the app
   // Note: Without runWithInfobits, zone errors won't be caught automatically
   runApp(const MyApp());
@@ -39,9 +39,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const HomePage(),
-      navigatorObservers: [
-        InfobitsAnalyticsObserver(),
-      ],
+      navigatorObservers: [InfobitsAnalyticsObserver()],
     );
   }
 }
@@ -52,9 +50,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manual Initialization Example'),
-      ),
+      appBar: AppBar(title: const Text('Manual Initialization Example')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

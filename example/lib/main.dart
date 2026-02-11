@@ -30,9 +30,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const HomePage(),
-      navigatorObservers: [
-        InfobitsAnalyticsObserver(),
-      ],
+      navigatorObservers: [InfobitsAnalyticsObserver()],
     );
   }
 }
@@ -50,15 +48,17 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    
+
     // Safe initialization checks
     if (Infobits.canTrack) {
       InfobitsAnalytics.instance.startView('/home');
     }
-    
+
     if (Infobits.canLog) {
       Logger.info('HomePage initialized');
-      Logger.debug('Infobits status - Initialized: ${Infobits.isInitialized}, Can log: ${Infobits.canLog}, Can track: ${Infobits.canTrack}');
+      Logger.debug(
+        'Infobits status - Initialized: ${Infobits.isInitialized}, Can log: ${Infobits.canLog}, Can track: ${Infobits.canTrack}',
+      );
     }
   }
 
@@ -66,10 +66,12 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _counter++;
     });
-    
+
     // Track custom analytics event (using startView as a workaround)
-    InfobitsAnalytics.instance.startView('/events/button_click?value=$_counter');
-    
+    InfobitsAnalytics.instance.startView(
+      '/events/button_click?value=$_counter',
+    );
+
     // Log the action
     Logger.debug('Counter incremented to $_counter');
   }
@@ -79,8 +81,12 @@ class _HomePageState extends State<HomePage> {
       // Intentionally trigger an error for demonstration
       throw Exception('This is a test error for demonstration purposes');
     } catch (e, stackTrace) {
-      Logger.error('Error triggered', exception: e, information: stackTrace.toString());
-      
+      Logger.error(
+        'Error triggered',
+        exception: e,
+        information: stackTrace.toString(),
+      );
+
       // Also track as an analytics event
       InfobitsAnalytics.instance.startView('/events/error_triggered');
     }
@@ -117,9 +123,7 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'You have pushed the button this many times:',
-            ),
+            const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
@@ -199,9 +203,7 @@ class _SecondPageState extends State<SecondPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Second Page'),
-      ),
+      appBar: AppBar(title: const Text('Second Page')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -234,32 +236,33 @@ class AnalyticsPage extends StatefulWidget {
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
   final TextEditingController _eventNameController = TextEditingController();
-  final TextEditingController _propertyValueController = TextEditingController();
+  final TextEditingController _propertyValueController =
+      TextEditingController();
 
   void _trackCustomEvent() {
     final eventName = _eventNameController.text.trim();
     final propertyValue = _propertyValueController.text.trim();
-    
+
     if (eventName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter an event name')),
       );
       return;
     }
-    
+
     // Use startView to track custom events
     String eventPath = '/events/$eventName';
     if (propertyValue.isNotEmpty) {
       eventPath += '?value=$propertyValue';
     }
-    
+
     InfobitsAnalytics.instance.startView(eventPath);
     Logger.info('Custom event tracked: $eventName', information: propertyValue);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Event "$eventName" tracked!')),
-    );
-    
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Event "$eventName" tracked!')));
+
     // Clear fields
     _eventNameController.clear();
     _propertyValueController.clear();
@@ -275,9 +278,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Analytics Demo'),
-      ),
+      appBar: AppBar(title: const Text('Analytics Demo')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -331,7 +332,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    InfobitsAnalytics.instance.startView('/events/purchase?amount=99.99&currency=USD');
+                    InfobitsAnalytics.instance.startView(
+                      '/events/purchase?amount=99.99&currency=USD',
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Tracked: purchase')),
                     );
@@ -340,7 +343,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    InfobitsAnalytics.instance.startView('/events/share?platform=twitter&content=article');
+                    InfobitsAnalytics.instance.startView(
+                      '/events/share?platform=twitter&content=article',
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Tracked: share')),
                     );
@@ -351,9 +356,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   onPressed: () {
                     // Test crash functionality (commented out for safety)
                     // InfobitsLogging.instance.crash('Test crash from example app');
-                    Logger.fatal('Simulated fatal error', exception: 'User triggered fatal log');
+                    Logger.fatal(
+                      'Simulated fatal error',
+                      exception: 'User triggered fatal log',
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fatal error logged (app not crashed)')),
+                      const SnackBar(
+                        content: Text('Fatal error logged (app not crashed)'),
+                      ),
                     );
                   },
                   child: const Text('Log Fatal Error'),

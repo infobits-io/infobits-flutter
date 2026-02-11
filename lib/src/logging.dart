@@ -53,7 +53,7 @@ class InfobitsLogging {
     if (config == null) {
       throw Exception('Infobits configuration not initialized');
     }
-    
+
     if (_instance != null) {
       _instance!.close();
     }
@@ -61,13 +61,19 @@ class InfobitsLogging {
     _instance = InfobitsLogging._create();
   }
 
-  LoggingOptions get options => InfobitsConfig.instance?.loggingOptions ?? LoggingOptions.development();
-  void Function(LoggingLogEvent logEvent)? get onLog => InfobitsConfig.instance?.onLog;
-  String get ingestUrl => InfobitsConfig.instance?.loggingIngestUrl ?? _defaultIngestUrl;
+  LoggingOptions get options =>
+      InfobitsConfig.instance?.loggingOptions ?? LoggingOptions.development();
+  void Function(LoggingLogEvent logEvent)? get onLog =>
+      InfobitsConfig.instance?.onLog;
+  String get ingestUrl =>
+      InfobitsConfig.instance?.loggingIngestUrl ?? _defaultIngestUrl;
   String? get apiKey => InfobitsConfig.instance?.apiKey;
-  Duration get sendInterval => InfobitsConfig.instance?.sendInterval ?? const Duration(milliseconds: 100);
+  Duration get sendInterval =>
+      InfobitsConfig.instance?.sendInterval ??
+      const Duration(milliseconds: 100);
   int get maxLogCount => InfobitsConfig.instance?.maxLogCount ?? 100;
-  int get includedContextLogs => InfobitsConfig.instance?.includedContextLogs ?? 0;
+  int get includedContextLogs =>
+      InfobitsConfig.instance?.includedContextLogs ?? 0;
   String? get domain => InfobitsConfig.instance?.domain;
   String? get namespace => null; // Deprecated - use domain
 
@@ -90,8 +96,8 @@ class InfobitsLogging {
       return errorBuilder(errorDetails);
     };
 
-    debugPrint =
-        (message, {wrapWidth}) => recordLog(LoggingLogLevel.debug, message);
+    debugPrint = (message, {wrapWidth}) =>
+        recordLog(LoggingLogLevel.debug, message);
   }
 
   bool get isLoggingCollectionEnabled {
@@ -101,11 +107,8 @@ class InfobitsLogging {
   /// Crash the app intentionally (for testing purposes)
   void crash([String message = 'Manual crash triggered']) {
     // Log the crash message first
-    recordLog(
-      LoggingLogLevel.fatal,
-      'App crash triggered: $message',
-    );
-    
+    recordLog(LoggingLogLevel.fatal, 'App crash triggered: $message');
+
     // Wait a moment to ensure log is sent
     Future.delayed(const Duration(milliseconds: 500), () {
       // Force crash by throwing an unhandled exception
@@ -256,8 +259,11 @@ class InfobitsLogging {
     final client = http.Client();
 
     try {
-      final response =
-          await client.post(endpoint, headers: headers, body: body);
+      final response = await client.post(
+        endpoint,
+        headers: headers,
+        body: body,
+      );
       if (response.statusCode == 200) {
         print("Sent ${logs.length} logs to server");
       } else {
@@ -269,7 +275,8 @@ class InfobitsLogging {
   }
 
   Future<Map<String, Object?>> prepareLogForServer(
-      LoggingLogEvent logEvent) async {
+    LoggingLogEvent logEvent,
+  ) async {
     final protocol = kIsWeb ? Uri.base.scheme : "app";
     final domain = kIsWeb ? Uri.base.host : this.domain;
     final path = kIsWeb ? Uri.base.path : "";
@@ -296,11 +303,11 @@ class InfobitsLogging {
 
     // Include breadcrumbs for error and fatal logs
     List<Map<String, dynamic>>? breadcrumbsJson;
-    if (logEvent.level == LoggingLogLevel.error || 
+    if (logEvent.level == LoggingLogLevel.error ||
         logEvent.level == LoggingLogLevel.fatal) {
       breadcrumbsJson = BreadcrumbManager.instance.toJson();
     }
-    
+
     return {
       'level': logEvent.level.index + 1,
       'message': logEvent.message.toString(),
@@ -312,7 +319,7 @@ class InfobitsLogging {
       'screen_resolution': '${width}x$height',
       'created_at': logEvent.loggedAt.toUtc().toIso8601String(),
       if (logEvent.metadata != null) 'metadata': logEvent.metadata,
-      if (breadcrumbsJson != null && breadcrumbsJson.isNotEmpty) 
+      if (breadcrumbsJson != null && breadcrumbsJson.isNotEmpty)
         'breadcrumbs': breadcrumbsJson,
     };
   }
@@ -429,8 +436,9 @@ class InfobitsLogging {
         : stack;
 
     // Extract stack trace
-    final List<LoggingTrace> stackTraceElements =
-        getStackTraceElements(stackTrace);
+    final List<LoggingTrace> stackTraceElements = getStackTraceElements(
+      stackTrace,
+    );
 
     // Extract reason of the error
     String message = "App encountered an error";
@@ -477,7 +485,8 @@ class InfobitsLogging {
   ///
   /// [FlutterErrorDetails] a object containing all information about the exception
   Future<void> recordFlutterFatalError(
-      FlutterErrorDetails flutterErrorDetails) {
+    FlutterErrorDetails flutterErrorDetails,
+  ) {
     return recordFlutterError(flutterErrorDetails, fatal: true);
   }
 }

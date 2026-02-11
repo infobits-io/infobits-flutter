@@ -19,7 +19,7 @@ class RegionConfig {
       //   return 'https://us.infobits.io/a/';
     }
   }
-  
+
   /// Get the logging ingest URL for a specific region
   static String getLoggingIngestUrl(InfobitsRegion region) {
     switch (region) {
@@ -30,15 +30,15 @@ class RegionConfig {
       //   return 'https://us.infobits.io/l/';
     }
   }
-  
+
   /// Default region for data collection
   static const InfobitsRegion defaultRegion = InfobitsRegion.eu;
-  
+
   /// Get the default analytics ingest URL
-  static String get defaultAnalyticsIngestUrl => 
+  static String get defaultAnalyticsIngestUrl =>
       getAnalyticsIngestUrl(defaultRegion);
-  
+
   /// Get the default logging ingest URL
-  static String get defaultLoggingIngestUrl => 
+  static String get defaultLoggingIngestUrl =>
       getLoggingIngestUrl(defaultRegion);
 }

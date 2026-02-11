@@ -56,6 +56,8 @@ class LoggingOptions {
     }());
     final Object exception = errorDetails.exception;
     return LoggingErrorWidget.withDetails(
-        message: message, error: exception is FlutterError ? exception : null);
+      message: message,
+      error: exception is FlutterError ? exception : null,
+    );
   };
 }

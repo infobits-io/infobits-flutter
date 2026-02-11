@@ -8,13 +8,11 @@ import 'mock_logger.dart';
 class InfobitsTestConfig {
   final MockInfobitsAnalytics mockAnalytics;
   final MockLogger mockLogger;
-  
-  InfobitsTestConfig({
-    MockInfobitsAnalytics? analytics,
-    MockLogger? logger,
-  })  : mockAnalytics = analytics ?? MockInfobitsAnalytics(),
-        mockLogger = logger ?? MockLogger();
-  
+
+  InfobitsTestConfig({MockInfobitsAnalytics? analytics, MockLogger? logger})
+    : mockAnalytics = analytics ?? MockInfobitsAnalytics(),
+      mockLogger = logger ?? MockLogger();
+
   /// Reset all mocks
   void reset() {
     mockAnalytics.clear();
@@ -23,15 +21,9 @@ class InfobitsTestConfig {
 }
 
 /// Create a test widget with Infobits mocks
-Widget createTestWidget(
-  Widget child, {
-  InfobitsTestConfig? config,
-}) {
-  return MaterialApp(
-    home: child,
-  );
+Widget createTestWidget(Widget child, {InfobitsTestConfig? config}) {
+  return MaterialApp(home: child);
 }
-
 
 /// Verify that an event was tracked
 bool verifyEventTracked(
@@ -41,7 +33,7 @@ bool verifyEventTracked(
 }) {
   final events = analytics.getEventsByName(eventName);
   if (events.isEmpty) return false;
-  
+
   if (expectedProperties != null) {
     final lastEvent = events.last;
     for (final entry in expectedProperties.entries) {
@@ -62,14 +54,14 @@ bool verifyLogRecorded(
   if (!logger.wasMessageLogged(message)) {
     return false;
   }
-  
+
   if (level != null) {
     final logsWithMessage = logger.logs
         .where((log) => log.message.toString().contains(message))
         .toList();
     return logsWithMessage.any((log) => log.level == level);
   }
-  
+
   return true;
 }
 
@@ -84,7 +76,8 @@ StackTrace createTestStackTrace() {
 }
 
 /// Wait for async operations
-Future<void> waitForAsync([Duration duration = const Duration(milliseconds: 100)]) {
+Future<void> waitForAsync([
+  Duration duration = const Duration(milliseconds: 100),
+]) {
   return Future.delayed(duration);
 }
-

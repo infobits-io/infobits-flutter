@@ -40,11 +40,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    
+
     // Logging works without API key - logs to console only
     Logger.info('HomePage initialized');
     Logger.debug('Running in local-only mode (no API key)');
-    
+
     // Analytics won't work without API key
     if (Infobits.canTrack) {
       // This won't execute in local-only mode
@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _counter++;
     });
-    
+
     // Local logging works great!
     Logger.debug('Counter incremented to $_counter');
   }
@@ -68,7 +68,10 @@ class _HomePageState extends State<HomePage> {
     Logger.debug('Debug: Detailed information for debugging');
     Logger.info('Info: General informational messages');
     Logger.warn('Warning: Something unexpected but recoverable');
-    Logger.error('Error: Something went wrong', exception: Exception('Test error'));
+    Logger.error(
+      'Error: Something went wrong',
+      exception: Exception('Test error'),
+    );
     Logger.fatal('Fatal: Critical error that might crash the app');
   }
 
@@ -77,7 +80,11 @@ class _HomePageState extends State<HomePage> {
       throw Exception('This is a test error');
     } catch (e, stack) {
       // Errors are logged locally without API key
-      Logger.error('Caught an error', exception: e, information: stack.toString());
+      Logger.error(
+        'Caught an error',
+        exception: e,
+        information: stack.toString(),
+      );
     }
   }
 
@@ -97,11 +104,18 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    const Icon(Icons.info_outline, size: 48, color: Colors.blue),
+                    const Icon(
+                      Icons.info_outline,
+                      size: 48,
+                      color: Colors.blue,
+                    ),
                     const SizedBox(height: 8),
                     const Text(
                       'Running without API key',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text('✅ Local logging to console'),
@@ -114,9 +128,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 30),
-            const Text(
-              'You have pushed the button this many times:',
-            ),
+            const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
@@ -154,7 +166,10 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(height: 10),
                             const Text(
                               'No API key provided, so only local logging is available.',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),

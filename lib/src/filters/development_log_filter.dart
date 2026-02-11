@@ -6,9 +6,7 @@ import 'log_filter.dart';
 ///
 /// In release mode ALL logs are omitted.
 class LoggingDevelopmentLogFilter extends LoggingLogFilter {
-  const LoggingDevelopmentLogFilter({
-    super.level = LoggingLogLevel.verbose,
-  });
+  const LoggingDevelopmentLogFilter({super.level = LoggingLogLevel.verbose});
 
   @override
   bool shouldLog(LoggingLogEvent logEvent) {

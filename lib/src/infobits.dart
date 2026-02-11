@@ -18,19 +18,19 @@ class Infobits {
 
   /// Check if Infobits has been initialized
   static bool get isInitialized => _initialized;
-  
+
   /// Get the current configuration
   static InfobitsConfig? get config => InfobitsConfig.instance;
-  
+
   /// Get the API key if configured
   static String? get apiKey => config?.apiKey;
-  
+
   /// Get the domain if configured
   static String? get domain => config?.domain;
-  
+
   /// Check if debug mode is enabled
   static bool get debug => config?.debug ?? kDebugMode;
-  
+
   /// Check if logging is available
   static bool get canLog {
     if (!_initialized) return false;
@@ -42,7 +42,7 @@ class Infobits {
       return false;
     }
   }
-  
+
   /// Check if analytics is available
   static bool get canTrack {
     if (!_initialized) return false;
@@ -55,13 +55,13 @@ class Infobits {
       return false;
     }
   }
-  
+
   /// Get the benchmark instance
   static InfobitsBenchmark get benchmark => InfobitsBenchmark.instance;
-  
+
   /// Get the breadcrumb manager instance
   static BreadcrumbManager get breadcrumbs => BreadcrumbManager.instance;
-  
+
   /// Add a breadcrumb for debugging
   static void addBreadcrumb(
     String category, {
@@ -69,22 +69,17 @@ class Infobits {
     Map<String, dynamic>? data,
     BreadcrumbLevel level = BreadcrumbLevel.info,
   }) {
-    breadcrumbs.add(
-      category,
-      message: message,
-      data: data,
-      level: level,
-    );
+    breadcrumbs.add(category, message: message, data: data, level: level);
   }
 
   /// Unified initialization for both Analytics and Logging
-  /// 
+  ///
   /// This method initializes both Infobits Analytics and Logging with a single call.
-  /// 
+  ///
   /// Optional parameters:
   /// - [apiKey]: Your Infobits API key (required for sending logs to server)
   /// - [domain] or [namespace]: Your application domain or namespace (required if apiKey is provided)
-  /// 
+  ///
   /// Other optional parameters:
   /// - [analyticsEnabled]: Enable analytics tracking (default: true)
   /// - [loggingEnabled]: Enable logging (default: true)
@@ -130,9 +125,9 @@ class Infobits {
       maxLogCount: maxLogCount,
       includedContextLogs: includedContextLogs,
     );
-    
+
     final config = InfobitsConfig.instance!;
-    
+
     // Initialize Analytics if enabled and API key is provided
     if (config.canUseAnalytics) {
       await InfobitsAnalytics.initialize();
@@ -142,25 +137,23 @@ class Infobits {
     if (config.loggingEnabled) {
       await InfobitsLogging.initialize();
     }
-    
+
     // Initialize breadcrumb manager
-    BreadcrumbManager.initialize(
-      maxBreadcrumbs: 100,
-    );
+    BreadcrumbManager.initialize(maxBreadcrumbs: 100);
 
     _initialized = true;
   }
 
   /// Run an app with Infobits initialization and error handling
-  /// 
+  ///
   /// This function:
   /// 1. Ensures Flutter bindings are initialized
   /// 2. Sets up a protected Zone with runZonedGuarded
   /// 3. Initializes Infobits inside the zone
   /// 4. Runs your app with comprehensive error handling
-  /// 
+  ///
   /// The initialization parameters are the same as [Infobits.initialize].
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// void main() {
@@ -190,64 +183,71 @@ class Infobits {
     void Function(Object error, StackTrace stack)? onError,
     bool ensureInitialized = true,
   }) {
-    runZonedGuarded(() async {
-      // Ensure Flutter bindings are initialized INSIDE the zone
-      if (ensureInitialized) {
-        WidgetsFlutterBinding.ensureInitialized();
-      }
+    runZonedGuarded(
+      () async {
+        // Ensure Flutter bindings are initialized INSIDE the zone
+        if (ensureInitialized) {
+          WidgetsFlutterBinding.ensureInitialized();
+        }
 
-      // Initialize Infobits inside the zone
-      // This will set up all error handlers (FlutterError.onError, PlatformDispatcher.onError, etc.)
-      await initialize(
-        apiKey: apiKey,
-        domain: domain,
-        namespace: namespace,
-        analyticsEnabled: analyticsEnabled,
-        loggingEnabled: loggingEnabled,
-        debug: debug,
-        loggingOptions: loggingOptions,
-        analyticsRegion: analyticsRegion,
-        analyticsIngestUrl: analyticsIngestUrl,
-        loggingIngestUrl: loggingIngestUrl,
-        onLog: onLog,
-        sendInterval: sendInterval,
-        maxLogCount: maxLogCount,
-        includedContextLogs: includedContextLogs,
-      );
+        // Initialize Infobits inside the zone
+        // This will set up all error handlers (FlutterError.onError, PlatformDispatcher.onError, etc.)
+        await initialize(
+          apiKey: apiKey,
+          domain: domain,
+          namespace: namespace,
+          analyticsEnabled: analyticsEnabled,
+          loggingEnabled: loggingEnabled,
+          debug: debug,
+          loggingOptions: loggingOptions,
+          analyticsRegion: analyticsRegion,
+          analyticsIngestUrl: analyticsIngestUrl,
+          loggingIngestUrl: loggingIngestUrl,
+          onLog: onLog,
+          sendInterval: sendInterval,
+          maxLogCount: maxLogCount,
+          includedContextLogs: includedContextLogs,
+        );
 
-      // Run the app
-      runApp(app);
-    }, (error, stack) {
-      // This catches errors in the current Zone
-      // At this point, Infobits should be initialized (unless initialization itself failed)
-      
-      if (canLog) {
-        // Log the error using Infobits
-        Logger.error('Uncaught zone error', exception: error, information: stack.toString());
-      } else if (kDebugMode) {
-        // Fallback logging in debug mode if Infobits isn't available
-        print('Zone error (Infobits not available): $error');
-        print('Stack trace: $stack');
-      }
-      
-      // Call custom error handler if provided
-      onError?.call(error, stack);
-    });
+        // Run the app
+        runApp(app);
+      },
+      (error, stack) {
+        // This catches errors in the current Zone
+        // At this point, Infobits should be initialized (unless initialization itself failed)
+
+        if (canLog) {
+          // Log the error using Infobits
+          Logger.error(
+            'Uncaught zone error',
+            exception: error,
+            information: stack.toString(),
+          );
+        } else if (kDebugMode) {
+          // Fallback logging in debug mode if Infobits isn't available
+          print('Zone error (Infobits not available): $error');
+          print('Stack trace: $stack');
+        }
+
+        // Call custom error handler if provided
+        onError?.call(error, stack);
+      },
+    );
   }
 }
 
 /// Convenience function to run an app with Infobits initialization and error handling
-/// 
+///
 /// This is a top-level function that wraps [Infobits.runWithInfobits]
 /// for easier usage.
-/// 
+///
 /// Example for local logging only:
 /// ```dart
 /// void main() {
 ///   runWithInfobits(app: MyApp());
 /// }
 /// ```
-/// 
+///
 /// Example with server logging:
 /// ```dart
 /// void main() {
